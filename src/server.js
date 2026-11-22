@@ -4,7 +4,7 @@ import { buildEpg } from './epg.js';
 import { fetchSchedule, upcomingRaces } from './schedule.js';
 import { findChannel, getChannels, state } from './store.js';
 
-export function createServer({ config, proxy, logger }) {
+export function createServer({ config, proxy, logger, scheduler }) {
   const app = express();
 
   function origin(req) {
@@ -16,6 +16,12 @@ export function createServer({ config, proxy, logger }) {
 
   app.get('/healthz', (req, res) => {
     res.json({ status: 'ok', channels: getChannels().length, lastScrape: state.lastScrape, sources: state.sources, errors: state.errors });
+  });
+
+  app.post('/refresh', async (req, res) => {
+    if (!scheduler) return res.status(503).json({ error: 'no scheduler' });
+    scheduler.runOnce(true).catch(() => {});
+    res.json({ status: 'triggered' });
   });
 
   app.get('/channels', (req, res) => {

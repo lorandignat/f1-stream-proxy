@@ -54,6 +54,7 @@ docker-compose.yml
 | SCRAPE_INTERVAL_MIN | 15 | minutes between listing scrapes |
 | SOURCES | vipbox:https://vipbox1.com/moto_gp,gkstreams:https://gkstreams.top/Formula/ | comma-separated list of `type:url` sources (vipbox, gkstreams) |
 | SCHEDULE_API | https://api.jolpi.ca/ergast/f1/current.json | F1 schedule API (Jolpi/Ergast) |
+| RACE_WINDOW_HOURS | 48 | only scrape/extract when a race is within this many hours (0 = always) |
 | CACHE_TTL_SEC | 300 | stream URL cache TTL |
 | SEGMENT_CACHE_MAX | 64 | max cached segments |
 | LOG_LEVEL | info | debug/info/warn/error |

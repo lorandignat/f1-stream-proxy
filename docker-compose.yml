@@ -12,5 +12,6 @@ services:
       - CACHE_TTL_SEC=300
       - SEGMENT_CACHE_MAX=64
       - LOG_LEVEL=info
+      - RACE_WINDOW_HOURS=48
       - PUBLIC_URL=
     restart: unless-stopped

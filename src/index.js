@@ -6,8 +6,8 @@ import { createScheduler } from './scheduler.js';
 
 const logger = createLogger(config.logLevel);
 const proxy = createProxy({ segmentCacheMax: config.segmentCacheMax, userAgent: config.userAgent, logger });
-const app = createServer({ config, proxy, logger });
 const scheduler = createScheduler({ config, logger });
+const app = createServer({ config, proxy, logger, scheduler });
 
 app.listen(config.port, () => {
   logger.info(`listening on ${config.port}`);

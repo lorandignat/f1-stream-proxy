@@ -28,4 +28,5 @@ export const config = {
     'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
   publicUrl: process.env.PUBLIC_URL || null,
   scheduleApi: process.env.SCHEDULE_API || 'https://api.jolpi.ca/ergast/f1/current.json',
+  raceWindowHours: Number(process.env.RACE_WINDOW_HOURS || 48),
 };

@@ -1,17 +1,42 @@
 import { scrapeListing } from './scraper.js';
 import { scrapeGkstreams } from './gkstreams.js';
 import { extractStreamUrl } from './extractor.js';
+import { fetchSchedule, upcomingRaces } from './schedule.js';
 import { setChannels, state } from './store.js';
 import { createLogger } from './logger.js';
 
 export function createScheduler({ config, logger }) {
   const log = logger || createLogger(config.logLevel);
 
-  async function runOnce() {
+  async function runOnce(force = false) {
     if (state.scraping) return;
     state.scraping = true;
     const errors = [];
     try {
+      // Race-window gate: only scrape/extract around an F1 weekend
+      if (!force && config.raceWindowHours > 0) {
+        try {
+          const races = await fetchSchedule(fetch, config.scheduleApi);
+          const now = new Date();
+          const windowMs = config.raceWindowHours * 60 * 60 * 1000;
+          const inWindow = races.some((r) => {
+            const d = new Date(r.datetime);
+            if (isNaN(d.getTime())) return false;
+            const diff = d.getTime() - now.getTime();
+            // within window before race, or up to 6h after race start
+            return diff <= windowMs && diff >= -6 * 60 * 60 * 1000;
+          });
+          if (!inWindow) {
+            log.info('no F1 race within race window; skipping scrape (use force to override)');
+            state.lastScrape = new Date().toISOString();
+            state.errors = [];
+            return;
+          }
+        } catch (e) {
+          log.warn('schedule check failed, proceeding with scrape:', e.message);
+        }
+      }
+
       state.sources = (config.sources || []).map((s) => `${s.type}:${s.url}`);
       const candidates = [];
       for (const src of (config.sources || [])) {
