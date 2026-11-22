@@ -33,20 +33,32 @@ export async function extractStreamUrl(streamPageUrl, opts = {}) {
       add(r.url());
       // Read response body and extract any stream URLs
       try {
-        const ct = r.headers()['content-type'] || '';
-        if (/json|text|javascript|html/i.test(ct) || r.url().includes('/fetch')) {
-          const body = await r.text().catch(() => '');
-          if (body) {
-            const rx = /https?:\/\/[^"'\\\s<>]+?\.m3u8[^"'\\\s<>]*/gi;
-            let m; while ((m = rx.exec(body)) !== null) add(m[0]);
-            const rx2 = /https?:\/\/[^"'\\\s<>]+?\.(mp4|ts)[^"'\\\s<>]*/gi;
-            while ((m = rx2.exec(body)) !== null) add(m[0]);
-            // Also catch vishnu/indianservers style URLs
-            const rx3 = /https?:\/\/[^"'\\\s<>]*indianservers[^"'\\\s<>]*/gi;
-            while ((m = rx3.exec(body)) !== null) add(m[0]);
-          }
+        const body = await r.text().catch(() => '');
+        if (body) {
+          const rx = /https?:\/\/[^"'\\\s<>]+?\.m3u8[^"'\\\s<>]*/gi;
+          let m; while ((m = rx.exec(body)) !== null) add(m[0]);
+          const rx2 = /https?:\/\/[^"'\\\s<>]+?\.(mp4|ts)[^"'\\\s<>]*/gi;
+          while ((m = rx2.exec(body)) !== null) add(m[0]);
+          const rx3 = /https?:\/\/[^"'\\\s<>]*indianservers[^"'\\\s<>]*/gi;
+          while ((m = rx3.exec(body)) !== null) add(m[0]);
+          const rx4 = /https?:\/\/[^"'\\\s<>]*secure\/[^"'\\\s<>]*/gi;
+          while ((m = rx4.exec(body)) !== null) add(m[0]);
         }
       } catch {}
+    });
+    // Capture WebSocket frames
+    page.on('websocket', (ws) => {
+      ws.on('framereceived', (frame) => {
+        try {
+          const payload = typeof frame.payload === 'string' ? frame.payload : '';
+          const rx = /https?:\/\/[^"'\\\s<>]+?\.m3u8[^"'\\\s<>]*/gi;
+          let m; while ((m = rx.exec(payload)) !== null) add(m[0]);
+          const rx3 = /https?:\/\/[^"'\\\s<>]*indianservers[^"'\\\s<>]*/gi;
+          while ((m = rx3.exec(payload)) !== null) add(m[0]);
+          const rx4 = /https?:\/\/[^"'\\\s<>]*secure\/[^"'\\\s<>]*/gi;
+          while ((m = rx4.exec(payload)) !== null) add(m[0]);
+        } catch {}
+      });
     });
     page.on('popup', async (p) => { try { await p.close(); } catch {} });
     page.on('requestfailed', (r) => {});
