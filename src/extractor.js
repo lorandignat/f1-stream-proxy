@@ -135,7 +135,7 @@ export async function extractStreamUrl(streamPageUrl, opts = {}) {
   if (!found.m3u8.length && !found.mp4.length) {
     const domains = [...new Set(allUrls.map((u) => { try { return new URL(u).host; } catch { return u; } }))];
     logger?.warn?.('no stream found. captured domains:', domains.slice(0, 20).join(', '));
-    logger?.debug?.('all urls:', allUrls.slice(-30).join(' | '));
+    logger?.warn?.('all urls:', allUrls.slice(-30).join(' | '));
   }
   const pick = found.m3u8[0] || found.mp4[0] || found.other[0] || null;
   return {
