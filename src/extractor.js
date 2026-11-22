@@ -28,7 +28,26 @@ export async function extractStreamUrl(streamPageUrl, opts = {}) {
     });
     const page = await context.newPage();
     page.on('request', (r) => { allUrls.push(r.url()); add(r.url()); });
-    page.on('response', (r) => { allUrls.push(r.url()); add(r.url()); });
+    page.on('response', async (r) => {
+      allUrls.push(r.url());
+      add(r.url());
+      // Read response body and extract any stream URLs
+      try {
+        const ct = r.headers()['content-type'] || '';
+        if (/json|text|javascript|html/i.test(ct) || r.url().includes('/fetch')) {
+          const body = await r.text().catch(() => '');
+          if (body) {
+            const rx = /https?:\/\/[^"'\\\s<>]+?\.m3u8[^"'\\\s<>]*/gi;
+            let m; while ((m = rx.exec(body)) !== null) add(m[0]);
+            const rx2 = /https?:\/\/[^"'\\\s<>]+?\.(mp4|ts)[^"'\\\s<>]*/gi;
+            while ((m = rx2.exec(body)) !== null) add(m[0]);
+            // Also catch vishnu/indianservers style URLs
+            const rx3 = /https?:\/\/[^"'\\\s<>]*indianservers[^"'\\\s<>]*/gi;
+            while ((m = rx3.exec(body)) !== null) add(m[0]);
+          }
+        }
+      } catch {}
+    });
     page.on('popup', async (p) => { try { await p.close(); } catch {} });
     page.on('requestfailed', (r) => {});
 
@@ -128,7 +147,18 @@ export async function extractStreamUrl(streamPageUrl, opts = {}) {
       try {
         const p2 = await context.newPage();
         p2.on('request', (r) => { allUrls.push(r.url()); add(r.url()); });
-        p2.on('response', (r) => { allUrls.push(r.url()); add(r.url()); });
+        p2.on('response', async (r) => {
+          allUrls.push(r.url()); add(r.url());
+          try {
+            const body = await r.text().catch(() => '');
+            if (body) {
+              const rx = /https?:\/\/[^"'\\\s<>]+?\.m3u8[^"'\\\s<>]*/gi;
+              let m; while ((m = rx.exec(body)) !== null) add(m[0]);
+              const rx3 = /https?:\/\/[^"'\\\s<>]*indianservers[^"'\\\s<>]*/gi;
+              while ((m = rx3.exec(body)) !== null) add(m[0]);
+            }
+          } catch {}
+        });
         await p2.goto(src, { waitUntil: 'domcontentloaded', timeout: 15000 }).catch(() => {});
         await p2.waitForTimeout(5000);
         await p2.close();
