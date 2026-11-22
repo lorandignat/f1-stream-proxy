@@ -49,7 +49,9 @@ docker-compose.yml
 | --- | --- | --- |
 | PORT | 9080 | HTTP port |
 | SCRAPE_INTERVAL_MIN | 15 | minutes between listing scrapes |
-| VIPBOX_URL | https://vipbox1.com/moto_gp | listing URL |
+| VIPBOX_URL | https://vipbox1.com/moto_gp | vipbox listing URL |
+| GKSTREAMS_API | https://api.reedstreams.link/api/matches/all | gkstreams match API |
+| GKSTREAMS_ENABLED | true | enable gkstreams source |
 | CACHE_TTL_SEC | 300 | stream URL cache TTL |
 | SEGMENT_CACHE_MAX | 64 | max cached segments |
 | LOG_LEVEL | info | debug/info/warn/error |

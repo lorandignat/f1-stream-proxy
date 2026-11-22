@@ -1,0 +1,4 @@
+[
+  {"category":"motor-sports","title":"Las Vegas Grand Prix - Race","league":{"name":"Formula 1"},"sources":[{"id":"src1","name":"HD | Sky Sports F1","embedUrl":"https://example.com/embed1"},{"id":"src2","name":"SD | Sky Sports F1","embedUrl":"https://example.com/embed2"}]},
+  {"category":"football","title":"Some Match","league":{"name":"Premier League"},"sources":[{"id":"x","name":"HD","embedUrl":"https://example.com/x"}]}
+]

@@ -4,6 +4,8 @@ export const config = {
   port: Number(process.env.PORT || 9080),
   scrapeIntervalMin: Number(process.env.SCRAPE_INTERVAL_MIN || 15),
   vipboxUrl: process.env.VIPBOX_URL || 'https://vipbox1.com/moto_gp',
+  gkstreamsApi: process.env.GKSTREAMS_API || 'https://api.reedstreams.link/api/matches/all',
+  gkstreamsEnabled: (process.env.GKSTREAMS_ENABLED || 'true').toLowerCase() !== 'false',
   cacheTtlSec: Number(process.env.CACHE_TTL_SEC || 300),
   segmentCacheMax: Number(process.env.SEGMENT_CACHE_MAX || 64),
   logLevel: process.env.LOG_LEVEL || 'info',

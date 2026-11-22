@@ -1,4 +1,5 @@
 import { scrapeListing } from './scraper.js';
+import { scrapeGkstreams } from './gkstreams.js';
 import { extractStreamUrl } from './extractor.js';
 import { setChannels, state } from './store.js';
 import { createLogger } from './logger.js';
@@ -10,11 +11,32 @@ export function createScheduler({ config, logger }) {
     if (state.scraping) return;
     state.scraping = true;
     try {
-      log.info('scraping listing', config.vipboxUrl);
-      const links = await scrapeListing(config.vipboxUrl, fetch, config.userAgent);
-      log.info('found', links.length, 'F1 links');
+      const candidates = [];
+      // 1. gkstreams (priority)
+      if (config.gkstreamsEnabled) {
+        try {
+          const gk = await scrapeGkstreams(fetch, config.userAgent, config.gkstreamsApi);
+          log.info('gkstreams: found', gk.length, 'F1 source links');
+          candidates.push(...gk);
+        } catch (e) {
+          log.warn('gkstreams scrape failed', e.message);
+        }
+      }
+      // 2. vipbox
+      try {
+        const vb = await scrapeListing(config.vipboxUrl, fetch, config.userAgent);
+        log.info('vipbox: found', vb.length, 'F1 links');
+        candidates.push(...vb);
+      } catch (e) {
+        log.warn('vipbox scrape failed', e.message);
+      }
+
+      // de-dupe by id
+      const seen = new Set();
+      const unique = candidates.filter((c) => (seen.has(c.id) ? false : (seen.add(c.id), true)));
+
       const channels = [];
-      for (const link of links) {
+      for (const link of unique) {
         let stream = null;
         let error = null;
         try {
@@ -22,20 +44,25 @@ export function createScheduler({ config, logger }) {
         } catch (e) {
           error = e.message;
         }
+        if (!stream || !stream.url) {
+          log.info('skipping (no working stream):', link.id);
+          continue;
+        }
         channels.push({
           id: link.id,
           title: link.title,
           url: link.url,
-          streamUrl: stream?.url || null,
-          type: stream?.type || null,
-          referer: stream?.referer || link.url,
+          streamUrl: stream.url,
+          type: stream.type,
+          referer: stream.referer || link.referer || link.url,
           extractedAt: new Date().toISOString(),
           error,
         });
-        log.info('extracted', link.id, stream?.url || 'NONE');
+        log.info('extracted', link.id, stream.url);
       }
       setChannels(channels);
       state.lastScrape = new Date().toISOString();
+      log.info('total working channels:', channels.length);
     } catch (e) {
       log.error('scrape failed', e.message);
     } finally {
@@ -51,3 +78,4 @@ export function createScheduler({ config, logger }) {
 
   return { runOnce, start };
 }
+EOF
