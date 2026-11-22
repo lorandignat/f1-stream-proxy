@@ -92,6 +92,13 @@ export async function extractStreamUrl(streamPageUrl, opts = {}) {
         const els = await page.$$('text=/play/i');
         for (const el of els.slice(0, 5)) { try { await el.click({ timeout: 300 }); } catch {} }
       } catch {}
+      // Try to start playback via player APIs
+      try {
+        await page.evaluate(() => {
+          try { if (window.jwplayer) { const p = window.jwplayer(); if (p && typeof p.play === 'function') p.play(); } } catch {}
+          try { const v = document.querySelector('video'); if (v) { v.muted = true; v.play().catch(() => {}); } } catch {}
+        });
+      } catch {}
       try { await page.waitForLoadState('networkidle', { timeout: 3000 }); } catch {}
       await page.waitForTimeout(2000);
       // check if we already found an m3u8
