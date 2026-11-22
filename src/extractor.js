@@ -21,7 +21,7 @@ export async function extractStreamUrl(streamPageUrl, opts = {}) {
     // Block ad domains so the player can load without overlays
     await context.route('**/*', (route) => {
       const url = route.request().url();
-      if (/aclib|adcash|adexchangeclear|velocecdn|popads|popcash|propellerads|doubleclick|googlesyndication|adservice|adnxs|advertising/i.test(url)) {
+      if (/aclib|adcash|adexchangeclear|velocecdn|popads|popcash|propellerads|doubleclick|googlesyndication|adnxs/i.test(url)) {
         return route.abort();
       }
       return route.continue();
@@ -74,21 +74,29 @@ export async function extractStreamUrl(streamPageUrl, opts = {}) {
         try {
           if (window.jwplayer) {
             const p = window.jwplayer();
-            if (p && typeof p.getPlaylist === 'function') {
-              const pl = p.getPlaylist();
-              if (Array.isArray(pl)) for (const e of pl) { if (e.file) out.push(e.file); if (e.sources) for (const s of e.sources) if (s.file) out.push(s.file); }
-            }
-            if (p && typeof p.getConfig === 'function') {
-              const c = p.getConfig();
-              if (c && c.file) out.push(c.file);
-              if (c && Array.isArray(c.sources)) for (const s of c.sources) if (s.file) out.push(s.file);
+            if (p) {
+              if (typeof p.getPlaylist === 'function') {
+                const pl = p.getPlaylist();
+                if (Array.isArray(pl)) for (const e of pl) { if (e.file) out.push(e.file); if (e.sources) for (const s of e.sources) if (s.file) out.push(s.file); if (e.sources) for (const s of e.sources) if (s.src) out.push(s.src); }
+              }
+              if (typeof p.getConfig === 'function') {
+                const c = p.getConfig();
+                if (c) {
+                  if (c.file) out.push(c.file);
+                  if (Array.isArray(c.sources)) for (const s of c.sources) { if (s.file) out.push(s.file); if (s.src) out.push(s.src); }
+                  if (c.playlist && Array.isArray(c.playlist)) for (const e of c.playlist) { if (e.file) out.push(e.file); if (e.sources) for (const s of e.sources) { if (s.file) out.push(s.file); if (s.src) out.push(s.src); } }
+                }
+              }
+              if (typeof p.getVisualQuality === 'function') {
+                try { const q = p.getVisualQuality(); if (q && q.url) out.push(q.url); } catch {}
+              }
             }
           }
-        } catch {}
+        } catch (e) { out.push('ERR:' + e.message); }
+        // Scan performance entries for m3u8/ts URLs
         try {
-          if (window.clappr && window.clappr.core && window.clappr.core.player) {
-            // best effort
-          }
+          const entries = performance.getEntriesByType('resource');
+          for (const e of entries) { if (e.name && /m3u8|\.ts\b|stream|playlist/i.test(e.name)) out.push(e.name); }
         } catch {}
         // Scan global vars for m3u8 strings
         try {
@@ -98,7 +106,7 @@ export async function extractStreamUrl(streamPageUrl, opts = {}) {
         } catch {}
         return out;
       });
-      if (Array.isArray(fromApi)) for (const u of fromApi) add(u);
+      if (Array.isArray(fromApi)) for (const u of fromApi) { if (typeof u === 'string' && u.startsWith('http')) add(u); }
     } catch {}
 
     // Scan rendered DOM/scripts for any m3u8/mp4 URL strings (all frames)
