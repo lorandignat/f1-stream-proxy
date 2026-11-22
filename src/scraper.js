@@ -27,7 +27,13 @@ export function parseListing(html, baseUrl) {
     if (seen.has(url)) return;
     seen.add(url);
     const id = slugId(url);
-    items.push({ id, title: text || id, url, logo: '', group: 'Formula 1', description: text || id, referer: url });
+    const slug = url.split('?')[0].split('/').pop() || '';
+    const eventSlug = slug.replace(/^notch-[a-z0-9]+-/i, '');
+    const eventName = eventSlug
+      ? eventSlug.split('-').map((w) => (w ? w[0].toUpperCase() + w.slice(1) : w)).join(' ')
+      : '';
+    const niceTitle = eventName && text ? `${eventName} - ${text}` : (text || eventName || id);
+    items.push({ id, title: niceTitle, url, logo: '', group: 'Formula 1', description: niceTitle, referer: url });
   });
   return items;
 }

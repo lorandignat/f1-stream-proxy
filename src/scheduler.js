@@ -10,7 +10,9 @@ export function createScheduler({ config, logger }) {
   async function runOnce() {
     if (state.scraping) return;
     state.scraping = true;
+    const errors = [];
     try {
+      state.sources = (config.sources || []).map((s) => `${s.type}:${s.url}`);
       const candidates = [];
       for (const src of (config.sources || [])) {
         try {
@@ -27,6 +29,7 @@ export function createScheduler({ config, logger }) {
           }
         } catch (e) {
           log.warn(`${src.type} scrape failed`, e.message);
+          errors.push(`${src.type}: ${e.message}`);
         }
       }
 
@@ -71,9 +74,12 @@ export function createScheduler({ config, logger }) {
         setChannels(channels.filter((c) => c.streamUrl));
         state.lastScrape = new Date().toISOString();
       }
+      state.errors = errors;
       log.info('total working channels:', channels.filter((c) => c.streamUrl).length);
     } catch (e) {
       log.error('scrape failed', e.message);
+      errors.push(`fatal: ${e.message}`);
+      state.errors = errors;
     } finally {
       state.scraping = false;
     }

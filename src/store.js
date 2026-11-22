@@ -3,6 +3,8 @@ export const state = {
   channels: [], // { id, title, url (stream page), streamUrl, type, referer, extractedAt, error }
   lastScrape: null,
   scraping: false,
+  errors: [], // recent scrape/extraction errors
+  sources: [],
 };
 
 export function setChannels(chs) { state.channels = chs; }

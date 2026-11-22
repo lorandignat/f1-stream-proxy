@@ -13,7 +13,7 @@ export function createServer({ config, proxy, logger }) {
   }
 
   app.get('/healthz', (req, res) => {
-    res.json({ status: 'ok', channels: getChannels().length, lastScrape: state.lastScrape });
+    res.json({ status: 'ok', channels: getChannels().length, lastScrape: state.lastScrape, sources: state.sources, errors: state.errors });
   });
 
   app.get('/channels', (req, res) => {
