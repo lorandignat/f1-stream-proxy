@@ -32,5 +32,3 @@ YAML
 
 echo "Written to $TARGET:$REMOTE_PATH"
 echo "Then on the host: cd \$(dirname '$REMOTE_PATH') && docker compose up -d"
-EOF
-chmod +x /tmp/opencode/deploy/copy-to-omv.sh
