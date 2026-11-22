@@ -1,12 +1,14 @@
 services:
   f1-stream-proxy:
-    image: ghcr.io/lorandignat/f1-stream-proxy:latest
+    build: .
+    image: f1-stream-proxy:latest
     container_name: f1-stream-proxy
     ports:
       - "9080:9080"
     environment:
+      - PORT=9080
       - SCRAPE_INTERVAL_MIN=15
-      - SOURCES=vipbox:https://vipbox1.com/moto_gp,gkstreams:https://gkstreams3.click/?id=las-vegas-grand-prix-race
+      - SOURCES=vipbox:https://vipbox1.com/moto_gp,gkstreams:https://gkstreams.top/Formula/
       - CACHE_TTL_SEC=300
       - SEGMENT_CACHE_MAX=64
       - LOG_LEVEL=info

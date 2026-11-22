@@ -1,9 +1,26 @@
 const API_URL = 'https://api.reedstreams.link/api/matches/all';
 
+function resolveApiUrl(input) {
+  try {
+    const u = new URL(input);
+    const id = u.searchParams.get('id');
+    // specific match page (gkstreams3.click/?id=...) -> filter by id
+    if (id) return { apiUrl: API_URL, filterId: id };
+    // gkstreams listing page or any gkstreams host -> all formula matches
+    if (u.hostname.includes('gkstreams') || u.hostname.includes('reedstreams.link')) {
+      return { apiUrl: API_URL, filterId: null };
+    }
+  } catch {}
+  if (input && input.includes('reedstreams.link')) return { apiUrl: input, filterId: null };
+  return { apiUrl: API_URL, filterId: null };
+}
+
 export async function scrapeGkstreams(fetchImpl = fetch, ua, apiUrl = API_URL) {
-  const res = await fetchImpl(apiUrl, { headers: { 'User-Agent': ua, Accept: 'application/json' } });
+  const { apiUrl: url, filterId } = resolveApiUrl(apiUrl);
+  const res = await fetchImpl(url, { headers: { 'User-Agent': ua, Accept: 'application/json' } });
   if (!res.ok) throw new Error(`gkstreams api failed: ${res.status}`);
-  const data = await res.json();
+  let data = await res.json();
+  if (filterId) data = (data || []).filter((m) => m.id === filterId);
   const out = [];
   for (const m of (data || [])) {
     const title = m.title || m.id;

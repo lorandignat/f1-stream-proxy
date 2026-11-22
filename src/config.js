@@ -1,6 +1,6 @@
 import 'dotenv/config';
 
-const DEFAULT_SOURCES = 'vipbox:https://vipbox1.com/moto_gp,gkstreams:https://api.reedstreams.link/api/matches/all';
+const DEFAULT_SOURCES = 'vipbox:https://vipbox1.com/moto_gp,gkstreams:https://gkstreams.top/Formula/';
 
 function parseSources(str) {
   const out = [];
