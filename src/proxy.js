@@ -47,8 +47,13 @@ export function createProxy({ segmentCacheMax, userAgent, logger }) {
     const text = await res.text();
     const ct = res.headers.get('content-type') || '';
     if (!isM3u8(text, ct)) {
-      // not a playlist; return as-is wrapped
       return { text, contentType: ct || 'application/octet-stream', rewritten: false };
+    }
+    // Prefetch segments to buffer playback
+    const segUrls = text.split(/\\r?\\n/).map((l) => l.trim()).filter((l) => l && !l.startsWith('#'));
+    for (const su of segUrls) {
+      const abs = resolveUrl(su, upstreamUrl);
+      fetchSegment(abs, referer).catch(() => {});
     }
     const rewritten = rewriteM3u8(text, upstreamUrl, id, origin);
     return { text: rewritten, contentType: 'application/vnd.apple.mpegurl', rewritten: true };
