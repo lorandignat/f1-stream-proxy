@@ -1,5 +1,6 @@
 import express from 'express';
 import { buildPlaylist } from './playlist.js';
+import { buildEpg } from './epg.js';
 import { findChannel, getChannels, state } from './store.js';
 
 export function createServer({ config, proxy, logger }) {
@@ -27,6 +28,12 @@ export function createServer({ config, proxy, logger }) {
     const o = origin(req);
     const body = buildPlaylist(getChannels().filter((c) => c.streamUrl), o);
     res.type('application/vnd.apple.mpegurl').send(body);
+  });
+
+  app.get('/epg.xml', (req, res) => {
+    const o = origin(req);
+    const body = buildEpg(getChannels().filter((c) => c.streamUrl), o);
+    res.type('application/xml').send(body);
   });
 
   app.get('/stream/:id/playlist.m3u8', async (req, res) => {

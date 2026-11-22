@@ -32,6 +32,9 @@ curl http://localhost:9080/healthz
 
 # playlist (add this URL in Jellyfin -> Live TV -> Tuner)
 curl http://localhost:9080/playlist.m3u
+
+# EPG guide (add in Jellyfin -> Live TV -> Guide -> XMLTV)
+curl http://localhost:9080/epg.xml
 ```
 
 ## Layout

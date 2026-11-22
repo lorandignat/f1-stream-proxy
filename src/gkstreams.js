@@ -44,6 +44,8 @@ export async function scrapeGkstreams(fetchImpl = fetch, ua, apiUrl = API_URL) {
         group: 'Motorsport',
         description: `${title} (${s.name})`,
         resolution,
+        scheduleStart: m.date ? new Date(m.date).toISOString() : '',
+        scheduleEnd: m.ends_at ? new Date(m.ends_at).toISOString() : '',
       });
     }
   }

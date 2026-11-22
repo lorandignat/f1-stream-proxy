@@ -65,6 +65,8 @@ export function createScheduler({ config, logger }) {
             group: link.group || 'Motorsport',
             description: link.description || link.title,
             resolution: link.resolution || '',
+            scheduleStart: link.scheduleStart || '',
+            scheduleEnd: link.scheduleEnd || '',
             extractedAt: new Date().toISOString(),
             error,
           });
