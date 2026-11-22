@@ -3,9 +3,9 @@ services:
     image: ghcr.io/lorandignat/f1-stream-proxy:latest
     container_name: f1-stream-proxy
     ports:
-      - "8080:8080"
+      - "9080:9080"
     environment:
-      - PORT=8080
+      - PORT=9080
       - SCRAPE_INTERVAL_MIN=15
       - VIPBOX_URL=https://vipbox1.com/moto_gp
       - CACHE_TTL_SEC=300
@@ -16,4 +16,3 @@ services:
     # To build locally instead of pulling the image, replace the lines above with:
     # build: .
     # and run: docker compose up -d --build
-EOF

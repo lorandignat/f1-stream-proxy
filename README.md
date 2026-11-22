@@ -28,10 +28,10 @@ cp .env.example .env
 docker compose up -d --build
 
 # health
-curl http://localhost:8080/healthz
+curl http://localhost:9080/healthz
 
 # playlist (add this URL in Jellyfin -> Live TV -> Tuner)
-curl http://localhost:8080/playlist.m3u
+curl http://localhost:9080/playlist.m3u
 ```
 
 ## Layout
@@ -47,7 +47,7 @@ docker-compose.yml
 
 | Var | Default | Meaning |
 | --- | --- | --- |
-| PORT | 8080 | HTTP port |
+| PORT | 9080 | HTTP port |
 | SCRAPE_INTERVAL_MIN | 15 | minutes between listing scrapes |
 | VIPBOX_URL | https://vipbox1.com/moto_gp | listing URL |
 | CACHE_TTL_SEC | 300 | stream URL cache TTL |

@@ -1,7 +1,7 @@
 import 'dotenv/config';
 
 export const config = {
-  port: Number(process.env.PORT || 8080),
+  port: Number(process.env.PORT || 9080),
   scrapeIntervalMin: Number(process.env.SCRAPE_INTERVAL_MIN || 15),
   vipboxUrl: process.env.VIPBOX_URL || 'https://vipbox1.com/moto_gp',
   cacheTtlSec: Number(process.env.CACHE_TTL_SEC || 300),
