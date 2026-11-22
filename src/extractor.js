@@ -25,28 +25,44 @@ export async function extractStreamUrl(streamPageUrl, opts = {}) {
     await page.goto(streamPageUrl, { waitUntil: 'domcontentloaded', timeout: 45000 }).catch((e) => {
       logger?.warn?.('goto failed', e.message);
     });
-    await page.waitForTimeout(6000);
+    await page.waitForTimeout(3000);
 
-    // Try to dismiss overlays / click play
+    // Try to dismiss overlays
     await page.evaluate(() => {
-      document.querySelectorAll('[id*="banner"],[class*="banner"],[class*="overlay"],[class*="popup"]').forEach((e) => {
+      document.querySelectorAll('[id*="banner"],[class*="banner"],[class*="overlay"],[class*="popup"],[id*="ad"]').forEach((e) => {
         e.style.display = 'none';
       });
     }).catch(() => {});
-    for (const sel of ['button', 'video', '[class*="play"]', '#player', '.player']) {
-      try { await page.click(sel, { timeout: 800 }); } catch {}
-    }
-    await page.waitForTimeout(10000);
 
-    // Scan rendered DOM/scripts for any m3u8/mp4 URL strings
+    // Click play-like elements and center
+    const playSelectors = ['button', 'video', '[class*="play"]', '#player', '.player', '[onclick]', 'a'];
+    for (const sel of playSelectors) {
+      try { await page.click(sel, { timeout: 500 }); } catch {}
+    }
     try {
-      const html = await page.content();
-      const rx = /https?:\/\/[^"'\\\s<>]+?\.m3u8[^"'\\\s<>]*/gi;
-      let m;
-      while ((m = rx.exec(html)) !== null) add(m[0]);
-      const rx2 = /https?:\/\/[^"'\\\s<>]+?\.mp4[^"'\\\s<>]*/gi;
-      while ((m = rx2.exec(html)) !== null) add(m[0]);
+      const vp = page.viewportSize() || { width: 1280, height: 720 };
+      await page.mouse.click(vp.width / 2, vp.height / 2);
     } catch {}
+    // Click any element whose text mentions play
+    try {
+      const els = await page.$$('text=/play/i');
+      for (const el of els.slice(0, 5)) { try { await el.click({ timeout: 500 }); } catch {} }
+    } catch {}
+
+    try { await page.waitForLoadState('networkidle', { timeout: 15000 }); } catch {}
+    await page.waitForTimeout(8000);
+
+    // Scan rendered DOM/scripts for any m3u8/mp4 URL strings (all frames)
+    for (const frame of page.frames()) {
+      try {
+        const html = await frame.content();
+        const rx = /https?:\/\/[^"'\\\s<>]+?\.m3u8[^"'\\\s<>]*/gi;
+        let m;
+        while ((m = rx.exec(html)) !== null) add(m[0]);
+        const rx2 = /https?:\/\/[^"'\\\s<>]+?\.mp4[^"'\\\s<>]*/gi;
+        while ((m = rx2.exec(html)) !== null) add(m[0]);
+      } catch {}
+    }
 
     // Recursively inspect iframes: collect their src (requests already captured)
     const iframes = await page.$$eval('iframe', (els) => els.map((e) => e.src)).catch(() => []);
