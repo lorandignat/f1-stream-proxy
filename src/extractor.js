@@ -5,6 +5,7 @@ export async function extractStreamUrl(streamPageUrl, opts = {}) {
   const logger = opts.logger;
   let browser;
   const found = { m3u8: [], mp4: [], other: [] };
+  const allUrls = [];
   const add = (u) => {
     if (!u) return;
     if (/\.m3u8(\?|$)/i.test(u)) found.m3u8.push(u);
@@ -26,8 +27,8 @@ export async function extractStreamUrl(streamPageUrl, opts = {}) {
       return route.continue();
     });
     const page = await context.newPage();
-    page.on('request', (r) => add(r.url()));
-    page.on('response', (r) => add(r.url()));
+    page.on('request', (r) => { allUrls.push(r.url()); add(r.url()); });
+    page.on('response', (r) => { allUrls.push(r.url()); add(r.url()); });
     page.on('popup', async (p) => { try { await p.close(); } catch {} });
     page.on('requestfailed', (r) => {});
 
@@ -66,6 +67,40 @@ export async function extractStreamUrl(streamPageUrl, opts = {}) {
       if (found.m3u8.length > 0) break;
     }
 
+    // Try to extract stream URL from player APIs (JW Player / Clappr)
+    try {
+      const fromApi = await page.evaluate(() => {
+        const out = [];
+        try {
+          if (window.jwplayer) {
+            const p = window.jwplayer();
+            if (p && typeof p.getPlaylist === 'function') {
+              const pl = p.getPlaylist();
+              if (Array.isArray(pl)) for (const e of pl) { if (e.file) out.push(e.file); if (e.sources) for (const s of e.sources) if (s.file) out.push(s.file); }
+            }
+            if (p && typeof p.getConfig === 'function') {
+              const c = p.getConfig();
+              if (c && c.file) out.push(c.file);
+              if (c && Array.isArray(c.sources)) for (const s of c.sources) if (s.file) out.push(s.file);
+            }
+          }
+        } catch {}
+        try {
+          if (window.clappr && window.clappr.core && window.clappr.core.player) {
+            // best effort
+          }
+        } catch {}
+        // Scan global vars for m3u8 strings
+        try {
+          const txt = JSON.stringify(window);
+          const rx = /https?:\/\/[^"'\\\s<>]+?\.m3u8[^"'\\\s<>]*/gi;
+          let m; while ((m = rx.exec(txt)) !== null) out.push(m[0]);
+        } catch {}
+        return out;
+      });
+      if (Array.isArray(fromApi)) for (const u of fromApi) add(u);
+    } catch {}
+
     // Scan rendered DOM/scripts for any m3u8/mp4 URL strings (all frames)
     for (const frame of page.frames()) {
       try {
@@ -84,8 +119,8 @@ export async function extractStreamUrl(streamPageUrl, opts = {}) {
       if (!src || src.startsWith('data:')) continue;
       try {
         const p2 = await context.newPage();
-        p2.on('request', (r) => add(r.url()));
-        p2.on('response', (r) => add(r.url()));
+        p2.on('request', (r) => { allUrls.push(r.url()); add(r.url()); });
+        p2.on('response', (r) => { allUrls.push(r.url()); add(r.url()); });
         await p2.goto(src, { waitUntil: 'domcontentloaded', timeout: 15000 }).catch(() => {});
         await p2.waitForTimeout(5000);
         await p2.close();
@@ -97,6 +132,11 @@ export async function extractStreamUrl(streamPageUrl, opts = {}) {
     if (browser) await browser.close().catch(() => {});
   }
 
+  if (!found.m3u8.length && !found.mp4.length) {
+    const domains = [...new Set(allUrls.map((u) => { try { return new URL(u).host; } catch { return u; } }))];
+    logger?.warn?.('no stream found. captured domains:', domains.slice(0, 20).join(', '));
+    logger?.debug?.('all urls:', allUrls.slice(-30).join(' | '));
+  }
   const pick = found.m3u8[0] || found.mp4[0] || found.other[0] || null;
   return {
     url: pick,
