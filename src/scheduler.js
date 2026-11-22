@@ -34,32 +34,38 @@ export function createScheduler({ config, logger }) {
       const unique = candidates.filter((c) => (seen.has(c.id) ? false : (seen.add(c.id), true)));
 
       const channels = [];
-      for (const link of unique) {
-        let stream = null;
-        let error = null;
-        try {
-          stream = await extractStreamUrl(link.url, { userAgent: config.userAgent, logger: log });
-        } catch (e) {
-          error = e.message;
+      const CONC = 2;
+      for (let i = 0; i < unique.length; i += CONC) {
+        const batch = unique.slice(i, i + CONC);
+        const results = await Promise.all(batch.map(async (link) => {
+          let stream = null;
+          let error = null;
+          try {
+            stream = await extractStreamUrl(link.url, { userAgent: config.userAgent, referer: link.referer || link.url, logger: log });
+          } catch (e) {
+            error = e.message;
+          }
+          return { link, stream, error };
+        }));
+        for (const { link, stream, error } of results) {
+          if (!stream || !stream.url) {
+            log.info('no working stream:', link.id, error || '');
+          }
+          channels.push({
+            id: link.id,
+            title: link.title,
+            url: link.url,
+            streamUrl: stream ? stream.url : null,
+            type: stream ? stream.type : null,
+            referer: (stream && stream.referer) || link.referer || link.url,
+            logo: link.logo || '',
+            group: link.group || 'Formula 1',
+            description: link.description || link.title,
+            extractedAt: new Date().toISOString(),
+            error,
+          });
+          if (stream && stream.url) log.info('extracted', link.id, stream.url);
         }
-        if (!stream || !stream.url) {
-          log.info('skipping (no working stream):', link.id);
-          continue;
-        }
-        channels.push({
-          id: link.id,
-          title: link.title,
-          url: link.url,
-          streamUrl: stream.url,
-          type: stream.type,
-          referer: stream.referer || link.referer || link.url,
-          logo: link.logo || '',
-          group: link.group || 'Formula 1',
-          description: link.description || link.title,
-          extractedAt: new Date().toISOString(),
-          error,
-        });
-        log.info('extracted', link.id, stream.url);
       }
       setChannels(channels);
       state.lastScrape = new Date().toISOString();

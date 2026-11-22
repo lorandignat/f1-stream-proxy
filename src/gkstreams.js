@@ -19,7 +19,7 @@ export async function scrapeGkstreams(fetchImpl = fetch, ua, apiUrl = API_URL) {
         id: s.id || `${m.id}-${s.streamNo}`,
         title: `${title} — ${s.name}`,
         url: s.embedUrl,
-        referer: s.embedUrl,
+        referer: 'https://gkstreams.top/',
         logo,
         group: 'Formula 1',
         description: `${title} (${s.name})`,

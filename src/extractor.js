@@ -2,6 +2,7 @@ import { chromium } from 'playwright';
 
 export async function extractStreamUrl(streamPageUrl, opts = {}) {
   const ua = opts.userAgent || 'Mozilla/5.0';
+  const referer = opts.referer || '';
   const logger = opts.logger;
   let browser;
   const found = { m3u8: [], mp4: [], other: [] };
@@ -16,16 +17,16 @@ export async function extractStreamUrl(streamPageUrl, opts = {}) {
       headless: true,
       args: ['--no-sandbox', '--disable-dev-shm-usage'],
     });
-    const context = await browser.newContext({ userAgent: ua });
+    const context = await browser.newContext({ userAgent: ua, extraHTTPHeaders: referer ? { Referer: referer } : {} });
     const page = await context.newPage();
     page.on('request', (r) => add(r.url()));
     page.on('response', (r) => add(r.url()));
     page.on('requestfailed', (r) => {});
 
-    await page.goto(streamPageUrl, { waitUntil: 'domcontentloaded', timeout: 30000 }).catch((e) => {
+    await page.goto(streamPageUrl, { waitUntil: 'domcontentloaded', timeout: 45000 }).catch((e) => {
       logger?.warn?.('goto failed', e.message);
     });
-    await page.waitForTimeout(5000);
+    await page.waitForTimeout(6000);
 
     // Try to dismiss overlays / click play
     await page.evaluate(() => {
@@ -36,7 +37,7 @@ export async function extractStreamUrl(streamPageUrl, opts = {}) {
     for (const sel of ['button', 'video', '[class*="play"]', '#player', '.player']) {
       try { await page.click(sel, { timeout: 800 }); } catch {}
     }
-    await page.waitForTimeout(8000);
+    await page.waitForTimeout(10000);
 
     // Scan rendered DOM/scripts for any m3u8/mp4 URL strings
     try {
