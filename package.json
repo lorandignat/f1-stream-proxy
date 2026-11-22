@@ -1,0 +1,21 @@
+{
+  "name": "f1-stream-proxy",
+  "version": "1.0.0",
+  "description": "Scrape vipbox1.com/moto_gp for F1 links, extract the stream, re-serve ad-free and buffered to Jellyfin.",
+  "type": "module",
+  "main": "src/index.js",
+  "scripts": {
+    "start": "node src/index.js",
+    "test": "node --test",
+    "lint": "node --check src/index.js"
+  },
+  "dependencies": {
+    "cheerio": "^1.0.0",
+    "dotenv": "^16.4.5",
+    "express": "^4.21.0",
+    "playwright": "^1.50.0"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}
