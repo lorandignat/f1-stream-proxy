@@ -26,59 +26,37 @@ export async function extractStreamUrl(streamPageUrl, opts = {}) {
     await page.goto(streamPageUrl, { waitUntil: 'domcontentloaded', timeout: 45000 }).catch((e) => {
       logger?.warn?.('goto failed', e.message);
     });
-    await page.waitForTimeout(3000);
+    await page.waitForTimeout(2000);
 
-    // Aggressively dismiss ads/popups (aclib etc.)
-    await page.evaluate(() => {
-      try { window.open = () => null; } catch {}
-      const kill = (el) => { try { el.remove(); } catch { el.style.display = 'none'; } };
-      document.querySelectorAll('[id*="banner"],[class*="banner"],[class*="overlay"],[class*="popup"],[id*="ad"],[class*="ad-"],[id*="aclib"]').forEach(kill);
-      // remove high z-index fixed/absolute elements except the player
-      document.querySelectorAll('*').forEach((el) => {
-        try {
-          const st = getComputedStyle(el);
-          const z = parseInt(st.zIndex) || 0;
-          if (z > 100 && st.position !== 'static' && el.id !== 'player' && !el.closest('#player')) {
-            el.style.display = 'none';
-          }
-        } catch {}
-      });
-    }).catch(() => {});
-
-    // Click play-like elements and center
-    const playSelectors = ['button', 'video', '[class*="play"]', '#player', '.player', '[onclick]', 'a'];
-    for (const sel of playSelectors) {
-      try { await page.click(sel, { timeout: 500 }); } catch {}
+    // Loop for ~30s: dismiss ads, click play, collect
+    const start = Date.now();
+    while (Date.now() - start < 15000) {
+      await page.evaluate(() => {
+        try { window.open = () => null; } catch {}
+        const kill = (el) => { try { el.remove(); } catch { el.style.display = 'none'; } };
+        document.querySelectorAll('[id*="banner"],[class*="banner"],[class*="overlay"],[class*="popup"],[id*="ad"],[class*="ad-"],[id*="aclib"]').forEach(kill);
+        document.querySelectorAll('*').forEach((el) => {
+          try {
+            const st = getComputedStyle(el);
+            const z = parseInt(st.zIndex) || 0;
+            if (z > 100 && st.position !== 'static' && el.id !== 'player' && !el.closest('#player')) {
+              el.style.display = 'none';
+            }
+          } catch {}
+        });
+      }).catch(() => {});
+      for (const sel of ['button', 'video', '[class*="play"]', '#player', '.player', '[onclick]']) {
+        try { await page.click(sel, { timeout: 300 }); } catch {}
+      }
+      try {
+        const els = await page.$$('text=/play/i');
+        for (const el of els.slice(0, 5)) { try { await el.click({ timeout: 300 }); } catch {} }
+      } catch {}
+      try { await page.waitForLoadState('networkidle', { timeout: 3000 }); } catch {}
+      await page.waitForTimeout(2000);
+      // check if we already found an m3u8
+      if (found.m3u8.length > 0) break;
     }
-    try {
-      const vp = page.viewportSize() || { width: 1280, height: 720 };
-      await page.mouse.click(vp.width / 2, vp.height / 2);
-    } catch {}
-    // Click any element whose text mentions play
-    try {
-      const els = await page.$$('text=/play/i');
-      for (const el of els.slice(0, 5)) { try { await el.click({ timeout: 500 }); } catch {} }
-    } catch {}
-
-    try { await page.waitForLoadState('networkidle', { timeout: 15000 }); } catch {}
-    await page.waitForTimeout(5000);
-    // second pass: dismiss ads again and click play
-    await page.evaluate(() => {
-      document.querySelectorAll('*').forEach((el) => {
-        try {
-          const st = getComputedStyle(el);
-          const z = parseInt(st.zIndex) || 0;
-          if (z > 100 && st.position !== 'static' && el.id !== 'player' && !el.closest('#player')) {
-            el.style.display = 'none';
-          }
-        } catch {}
-      });
-    }).catch(() => {});
-    for (const sel of ['button', 'video', '[class*="play"]', '#player', '.player']) {
-      try { await page.click(sel, { timeout: 500 }); } catch {}
-    }
-    try { await page.waitForLoadState('networkidle', { timeout: 10000 }); } catch {}
-    await page.waitForTimeout(5000);
 
     // Scan rendered DOM/scripts for any m3u8/mp4 URL strings (all frames)
     for (const frame of page.frames()) {
