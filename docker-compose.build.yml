@@ -1,0 +1,17 @@
+services:
+  f1-stream-proxy:
+    build: .
+    image: f1-stream-proxy:local
+    container_name: f1-stream-proxy
+    ports:
+      - "9080:9080"
+    environment:
+      - PORT=9080
+      - SCRAPE_INTERVAL_MIN=15
+      - VIPBOX_URL=https://vipbox1.com/moto_gp
+      - CACHE_TTL_SEC=300
+      - SEGMENT_CACHE_MAX=64
+      - LOG_LEVEL=info
+      - PUBLIC_URL=
+    restart: unless-stopped
+EOF
