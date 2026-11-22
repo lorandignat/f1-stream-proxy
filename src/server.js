@@ -47,7 +47,7 @@ export function createServer({ config, proxy, logger }) {
     if (!ch || !u) return res.status(400).send('missing u');
     const o = origin(req);
     try {
-      const r = await proxy.fetchResource(decodeURIComponent(u), ch.referer || ch.url, ch.id, o);
+      const r = await proxy.fetchResource(u, ch.referer || ch.url, ch.id, o);
       res.type(r.contentType);
       if (r.kind === 'm3u8') res.send(r.body);
       else res.send(r.body);
