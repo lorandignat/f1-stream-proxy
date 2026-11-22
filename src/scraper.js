@@ -27,7 +27,7 @@ export function parseListing(html, baseUrl) {
     if (seen.has(url)) return;
     seen.add(url);
     const id = slugId(url);
-    items.push({ id, title: text || id, url });
+    items.push({ id, title: text || id, url, logo: '', group: 'Formula 1', description: text || id, referer: url });
   });
   return items;
 }

@@ -12,26 +12,24 @@ export function createScheduler({ config, logger }) {
     state.scraping = true;
     try {
       const candidates = [];
-      // 1. gkstreams (priority)
-      if (config.gkstreamsEnabled) {
+      for (const src of (config.sources || [])) {
         try {
-          const gk = await scrapeGkstreams(fetch, config.userAgent, config.gkstreamsApi);
-          log.info('gkstreams: found', gk.length, 'F1 source links');
-          candidates.push(...gk);
+          if (src.type === 'vipbox') {
+            const vb = await scrapeListing(src.url, fetch, config.userAgent);
+            log.info('vipbox: found', vb.length, 'F1 links');
+            candidates.push(...vb);
+          } else if (src.type === 'gkstreams') {
+            const gk = await scrapeGkstreams(fetch, config.userAgent, src.url);
+            log.info('gkstreams: found', gk.length, 'F1 source links');
+            candidates.push(...gk);
+          } else {
+            log.warn('unknown source type', src.type);
+          }
         } catch (e) {
-          log.warn('gkstreams scrape failed', e.message);
+          log.warn(`${src.type} scrape failed`, e.message);
         }
       }
-      // 2. vipbox
-      try {
-        const vb = await scrapeListing(config.vipboxUrl, fetch, config.userAgent);
-        log.info('vipbox: found', vb.length, 'F1 links');
-        candidates.push(...vb);
-      } catch (e) {
-        log.warn('vipbox scrape failed', e.message);
-      }
 
-      // de-dupe by id
       const seen = new Set();
       const unique = candidates.filter((c) => (seen.has(c.id) ? false : (seen.add(c.id), true)));
 
@@ -55,6 +53,9 @@ export function createScheduler({ config, logger }) {
           streamUrl: stream.url,
           type: stream.type,
           referer: stream.referer || link.referer || link.url,
+          logo: link.logo || '',
+          group: link.group || 'Formula 1',
+          description: link.description || link.title,
           extractedAt: new Date().toISOString(),
           error,
         });
@@ -78,4 +79,3 @@ export function createScheduler({ config, logger }) {
 
   return { runOnce, start };
 }
-EOF

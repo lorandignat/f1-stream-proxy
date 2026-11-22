@@ -19,6 +19,7 @@ export function createServer({ config, proxy, logger }) {
   app.get('/channels', (req, res) => {
     res.json(getChannels().map((c) => ({
       id: c.id, title: c.title, type: c.type, streamUrl: c.streamUrl, error: c.error,
+      logo: c.logo, group: c.group, description: c.description,
     })));
   });
 

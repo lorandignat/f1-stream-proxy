@@ -11,6 +11,8 @@ export async function scrapeGkstreams(fetchImpl = fetch, ua, apiUrl = API_URL) {
     const league = (m.league && m.league.name) || '';
     const isF1 = cat === 'motor-sports' || /formula|f1|grand prix|motor/i.test(title + ' ' + league + ' ' + cat);
     if (!isF1) continue;
+    const logoPath = (m.league && m.league.logo) || m.poster || '';
+    const logo = logoPath ? (logoPath.startsWith('http') ? logoPath : `https://api.reedstreams.link${logoPath}`) : '';
     for (const s of (m.sources || [])) {
       if (!s.embedUrl) continue;
       out.push({
@@ -18,6 +20,9 @@ export async function scrapeGkstreams(fetchImpl = fetch, ua, apiUrl = API_URL) {
         title: `${title} — ${s.name}`,
         url: s.embedUrl,
         referer: s.embedUrl,
+        logo,
+        group: 'Formula 1',
+        description: `${title} (${s.name})`,
       });
     }
   }
