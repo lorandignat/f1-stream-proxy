@@ -1,6 +1,7 @@
 import express from 'express';
 import { buildPlaylist } from './playlist.js';
 import { buildEpg } from './epg.js';
+import { fetchSchedule, upcomingRaces } from './schedule.js';
 import { findChannel, getChannels, state } from './store.js';
 
 export function createServer({ config, proxy, logger }) {
@@ -34,6 +35,29 @@ export function createServer({ config, proxy, logger }) {
     const o = origin(req);
     const body = buildEpg(getChannels().filter((c) => c.streamUrl), o);
     res.type('application/xml').send(body);
+  });
+
+  app.get('/schedule', async (req, res) => {
+    try {
+      const races = await fetchSchedule(fetch, config.scheduleApi);
+      const now = req.query.all === '1' ? null : new Date();
+      const list = now ? upcomingRaces(races, now) : races;
+      res.json({ count: list.length, races: list });
+    } catch (e) {
+      res.status(502).json({ error: e.message });
+    }
+  });
+
+  app.get('/schedule.html', async (req, res) => {
+    try {
+      const races = await fetchSchedule(fetch, config.scheduleApi);
+      const list = upcomingRaces(races, new Date());
+      const rows = list.map((r) => `<tr><td>${r.round}</td><td>${r.name}</td><td>${r.circuit}</td><td>${r.location}</td><td>${r.datetime}</td></tr>`).join('');
+      const html = `<!DOCTYPE html><html><head><meta charset="utf-8"><title>F1 Schedule</title><style>body{font-family:sans-serif;padding:20px}table{border-collapse:collapse;width:100%}td,th{border:1px solid #ccc;padding:8px;text-align:left}th{background:#eee}</style></head><body><h1>Upcoming F1 Races</h1><table><tr><th>Round</th><th>Race</th><th>Circuit</th><th>Location</th><th>Date/Time (UTC)</th></tr>${rows}</table></body></html>`;
+      res.type('text/html').send(html);
+    } catch (e) {
+      res.status(502).send(e.message);
+    }
   });
 
   app.get('/stream/:id/playlist.m3u8', async (req, res) => {

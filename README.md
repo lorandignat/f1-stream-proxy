@@ -52,7 +52,8 @@ docker-compose.yml
 | --- | --- | --- |
 | PORT | 9080 | HTTP port |
 | SCRAPE_INTERVAL_MIN | 15 | minutes between listing scrapes |
-| SOURCES | vipbox:https://vipbox1.com/moto_gp,gkstreams:https://api.reedstreams.link/api/matches/all | comma-separated list of `type:url` sources (vipbox, gkstreams) |
+| SOURCES | vipbox:https://vipbox1.com/moto_gp,gkstreams:https://gkstreams.top/Formula/ | comma-separated list of `type:url` sources (vipbox, gkstreams) |
+| SCHEDULE_API | https://api.jolpi.ca/ergast/f1/current.json | F1 schedule API (Jolpi/Ergast) |
 | CACHE_TTL_SEC | 300 | stream URL cache TTL |
 | SEGMENT_CACHE_MAX | 64 | max cached segments |
 | LOG_LEVEL | info | debug/info/warn/error |
