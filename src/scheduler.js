@@ -62,7 +62,7 @@ export function createScheduler({ config, logger }) {
             type: stream ? stream.type : null,
             referer: (stream && stream.referer) || link.referer || link.url,
             logo: link.logo || '',
-            group: link.group || 'Formula 1',
+            group: link.group || 'Motorsport',
             description: link.description || link.title,
             resolution: link.resolution || '',
             extractedAt: new Date().toISOString(),

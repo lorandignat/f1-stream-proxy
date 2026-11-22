@@ -20,10 +20,10 @@ export function parseListing(html, baseUrl) {
     }
     // Only vipbox stream pages for moto_gp events
     if (!/\/moto_gp\//i.test(url)) return;
-    // F1 detection: normalize and check keywords (formula, f1, grand prix, motor)
+    // Motorsport detection: formula, f1, grand prix, motor, moto, nascar, indycar
     const norm = (text + ' ' + url).toLowerCase().replace(/[\s_\-]+/g, '');
-    const isF1 = /formula|f1|grandprix|motor/.test(norm);
-    if (!isF1) return;
+    const isMotor = /formula|f1|grandprix|motor|moto|nascar|indycar/.test(norm);
+    if (!isMotor) return;
     // must carry a stream selector (l= param) OR be a notch link
     if (seen.has(url)) return;
     seen.add(url);
@@ -34,7 +34,7 @@ export function parseListing(html, baseUrl) {
       ? eventSlug.split('-').map((w) => (w ? w[0].toUpperCase() + w.slice(1) : w)).join(' ')
       : '';
     const niceTitle = eventName && text ? `${eventName} - ${text}` : (text || eventName || id);
-    items.push({ id, title: niceTitle, url, logo: '', group: 'Formula 1', description: niceTitle, referer: url });
+    items.push({ id, title: niceTitle, url, logo: '', group: 'Motorsport', description: niceTitle, referer: url });
   });
   return items;
 }

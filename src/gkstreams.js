@@ -27,8 +27,8 @@ export async function scrapeGkstreams(fetchImpl = fetch, ua, apiUrl = API_URL) {
     const cat = (m.category || '').toLowerCase();
     const league = (m.league && m.league.name) || '';
     const norm = (title + ' ' + league + ' ' + cat).toLowerCase().replace(/[\s_\-]+/g, '');
-    const isF1 = cat === 'motor-sports' || /formula|f1|grandprix|motor/.test(norm);
-    if (!isF1) continue;
+    const isMotor = cat === 'motor-sports' || /formula|f1|grandprix|motor|moto|nascar|indycar/.test(norm);
+    if (!isMotor) continue;
     const logoPath = (m.league && m.league.logo) || m.poster || '';
     const logo = logoPath ? (logoPath.startsWith('http') ? logoPath : `https://api.reedstreams.link${logoPath}`) : '';
     for (const s of (m.sources || [])) {
@@ -41,7 +41,7 @@ export async function scrapeGkstreams(fetchImpl = fetch, ua, apiUrl = API_URL) {
         url: s.embedUrl,
         referer: 'https://gkstreams.top/',
         logo,
-        group: 'Formula 1',
+        group: 'Motorsport',
         description: `${title} (${s.name})`,
         resolution,
       });
