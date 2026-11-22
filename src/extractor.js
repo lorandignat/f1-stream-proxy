@@ -17,6 +17,14 @@ export async function extractStreamUrl(streamPageUrl, opts = {}) {
       args: ['--no-sandbox', '--disable-dev-shm-usage'],
     });
     const context = await browser.newContext({ userAgent: ua });
+    // Block ad domains so the player can load without overlays
+    await context.route('**/*', (route) => {
+      const url = route.request().url();
+      if (/aclib|adcash|adexchangeclear|velocecdn|popads|popcash|propellerads|doubleclick|googlesyndication|adservice|adnxs|advertising/i.test(url)) {
+        return route.abort();
+      }
+      return route.continue();
+    });
     const page = await context.newPage();
     page.on('request', (r) => add(r.url()));
     page.on('response', (r) => add(r.url()));
