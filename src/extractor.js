@@ -2,7 +2,6 @@ import { chromium } from 'playwright';
 
 export async function extractStreamUrl(streamPageUrl, opts = {}) {
   const ua = opts.userAgent || 'Mozilla/5.0';
-  const referer = opts.referer || '';
   const logger = opts.logger;
   let browser;
   const found = { m3u8: [], mp4: [], other: [] };
@@ -17,7 +16,7 @@ export async function extractStreamUrl(streamPageUrl, opts = {}) {
       headless: true,
       args: ['--no-sandbox', '--disable-dev-shm-usage'],
     });
-    const context = await browser.newContext({ userAgent: ua, extraHTTPHeaders: referer ? { Referer: referer } : {} });
+    const context = await browser.newContext({ userAgent: ua });
     const page = await context.newPage();
     page.on('request', (r) => add(r.url()));
     page.on('response', (r) => add(r.url()));
