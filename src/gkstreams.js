@@ -26,7 +26,8 @@ export async function scrapeGkstreams(fetchImpl = fetch, ua, apiUrl = API_URL) {
     const title = m.title || m.id;
     const cat = (m.category || '').toLowerCase();
     const league = (m.league && m.league.name) || '';
-    const isF1 = cat === 'motor-sports' || /formula|f1|grand prix|motor/i.test(title + ' ' + league + ' ' + cat);
+    const norm = (title + ' ' + league + ' ' + cat).toLowerCase().replace(/[\s_\-]+/g, '');
+    const isF1 = cat === 'motor-sports' || /formula|f1|grandprix|motor/.test(norm);
     if (!isF1) continue;
     const logoPath = (m.league && m.league.logo) || m.poster || '';
     const logo = logoPath ? (logoPath.startsWith('http') ? logoPath : `https://api.reedstreams.link${logoPath}`) : '';

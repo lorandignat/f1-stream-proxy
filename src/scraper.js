@@ -20,8 +20,9 @@ export function parseListing(html, baseUrl) {
     }
     // Only vipbox stream pages for moto_gp events
     if (!/\/moto_gp\//i.test(url)) return;
-    // F1 detection: text or slug contains "formula"
-    const isF1 = /formula/i.test(text) || /formula/i.test(url);
+    // F1 detection: normalize and check keywords (formula, f1, grand prix, motor)
+    const norm = (text + ' ' + url).toLowerCase().replace(/[\s_\-]+/g, '');
+    const isF1 = /formula|f1|grandprix|motor/.test(norm);
     if (!isF1) return;
     // must carry a stream selector (l= param) OR be a notch link
     if (seen.has(url)) return;
