@@ -61,15 +61,17 @@ export function createScheduler({ config, logger }) {
             logo: link.logo || '',
             group: link.group || 'Formula 1',
             description: link.description || link.title,
+            resolution: link.resolution || '',
             extractedAt: new Date().toISOString(),
             error,
           });
           if (stream && stream.url) log.info('extracted', link.id, stream.url);
+          else log.info('no working stream:', link.id, error || '');
         }
+        setChannels(channels.filter((c) => c.streamUrl));
+        state.lastScrape = new Date().toISOString();
       }
-      setChannels(channels);
-      state.lastScrape = new Date().toISOString();
-      log.info('total working channels:', channels.length);
+      log.info('total working channels:', channels.filter((c) => c.streamUrl).length);
     } catch (e) {
       log.error('scrape failed', e.message);
     } finally {
