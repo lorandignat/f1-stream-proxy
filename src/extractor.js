@@ -20,6 +20,7 @@ export async function extractStreamUrl(streamPageUrl, opts = {}) {
     const page = await context.newPage();
     page.on('request', (r) => add(r.url()));
     page.on('response', (r) => add(r.url()));
+    page.on('popup', async (p) => { try { await p.close(); } catch {} });
     page.on('requestfailed', (r) => {});
 
     await page.goto(streamPageUrl, { waitUntil: 'domcontentloaded', timeout: 45000 }).catch((e) => {
@@ -27,10 +28,20 @@ export async function extractStreamUrl(streamPageUrl, opts = {}) {
     });
     await page.waitForTimeout(3000);
 
-    // Try to dismiss overlays
+    // Aggressively dismiss ads/popups (aclib etc.)
     await page.evaluate(() => {
-      document.querySelectorAll('[id*="banner"],[class*="banner"],[class*="overlay"],[class*="popup"],[id*="ad"]').forEach((e) => {
-        e.style.display = 'none';
+      try { window.open = () => null; } catch {}
+      const kill = (el) => { try { el.remove(); } catch { el.style.display = 'none'; } };
+      document.querySelectorAll('[id*="banner"],[class*="banner"],[class*="overlay"],[class*="popup"],[id*="ad"],[class*="ad-"],[id*="aclib"]').forEach(kill);
+      // remove high z-index fixed/absolute elements except the player
+      document.querySelectorAll('*').forEach((el) => {
+        try {
+          const st = getComputedStyle(el);
+          const z = parseInt(st.zIndex) || 0;
+          if (z > 100 && st.position !== 'static' && el.id !== 'player' && !el.closest('#player')) {
+            el.style.display = 'none';
+          }
+        } catch {}
       });
     }).catch(() => {});
 
@@ -50,7 +61,24 @@ export async function extractStreamUrl(streamPageUrl, opts = {}) {
     } catch {}
 
     try { await page.waitForLoadState('networkidle', { timeout: 15000 }); } catch {}
-    await page.waitForTimeout(8000);
+    await page.waitForTimeout(5000);
+    // second pass: dismiss ads again and click play
+    await page.evaluate(() => {
+      document.querySelectorAll('*').forEach((el) => {
+        try {
+          const st = getComputedStyle(el);
+          const z = parseInt(st.zIndex) || 0;
+          if (z > 100 && st.position !== 'static' && el.id !== 'player' && !el.closest('#player')) {
+            el.style.display = 'none';
+          }
+        } catch {}
+      });
+    }).catch(() => {});
+    for (const sel of ['button', 'video', '[class*="play"]', '#player', '.player']) {
+      try { await page.click(sel, { timeout: 500 }); } catch {}
+    }
+    try { await page.waitForLoadState('networkidle', { timeout: 10000 }); } catch {}
+    await page.waitForTimeout(5000);
 
     // Scan rendered DOM/scripts for any m3u8/mp4 URL strings (all frames)
     for (const frame of page.frames()) {

@@ -39,12 +39,22 @@ export function parseListing(html, baseUrl) {
 }
 
 export async function scrapeListing(url, fetchImpl = fetch, ua) {
-  const res = await fetchImpl(url, {
-    headers: { 'User-Agent': ua, Accept: 'text/html' },
-  });
-  if (!res.ok) throw new Error(`listing fetch failed: ${res.status}`);
-  const html = await res.text();
-  return parseListing(html, url);
+  const fetchAndParse = async (u) => {
+    const res = await fetchImpl(u, { headers: { 'User-Agent': ua, Accept: 'text/html' } });
+    if (!res.ok) throw new Error(`listing fetch failed: ${res.status}`);
+    const html = await res.text();
+    return parseListing(html, u);
+  };
+  let items = await fetchAndParse(url);
+  // If no F1 links found and url doesn't already target moto_gp, try /moto_gp
+  if (items.length === 0 && !/\/moto_gp\/?$/i.test(url)) {
+    try {
+      const fallback = url.replace(/\/+$/, '') + '/moto_gp';
+      const more = await fetchAndParse(fallback);
+      if (more.length > 0) items = more;
+    } catch {}
+  }
+  return items;
 }
 
 function slugId(url) {
